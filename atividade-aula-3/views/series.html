@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2><i class="bi bi-tv-fill"></i> Séries</h2>
+    <a href="/cadserie" class="btn btn-dark"><i class="bi bi-plus-lg"></i> Cadastrar Série</a>
+</div>
+<hr>
+
+{% if lista_series %}
+<div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>#</th>
+                <th>Título</th>
+                <th>Criador</th>
+                <th>Ano</th>
+                <th>Gênero</th>
+                <th>Temporadas</th>
+                <th>Plataforma</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for serie in lista_series %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td><strong>{{ serie.titulo }}</strong></td>
+                <td>{{ serie.criador }}</td>
+                <td>{{ serie.ano }}</td>
+                <td><span class="badge bg-secondary">{{ serie.genero }}</span></td>
+                <td>{{ serie.temporadas }} temporada(s)</td>
+                <td><span class="badge bg-primary">{{ serie.plataforma }}</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info">Nenhuma série cadastrada ainda. <a href="/cadserie">Cadastre a primeira!</a></div>
+{% endif %}
+
+{% endblock content %}

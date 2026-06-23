@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>Aqui seus Games</h1>
+    <h3>Games</h3>
+    <hr>
+    <h4>Menu</h4>
+    <ul>
+          <li><a href="/">Voltar</a></li>
+           <li><a href="/consoles">Pagina de Consoles </a></li>
+    </ul>
+    <h2>Jogo em Destaque</h2>
+    <p>Game mais jogado pelos nossos usuarios:</p>
+    <ul>
+        <li>Titulo: <strong>{{ titulo }}</strong></li>
+        <li>Ano: <strong>{{ ano }}</strong> </li>
+        <li>Categoria: <strong>{{ categoria }}</strong> </li>
+        <li>O jogo {{ titulo }} tem {{2026 - ano }} anos</li>
+        <h3>Top Jogadores</h3>
+        <ol>
+             {% for jogador in Jogadores%}
+            <li>{{Jogador}}</li>
+            {% endfor %}
+        </ol>
+    </ul>
+{% endblock content %}

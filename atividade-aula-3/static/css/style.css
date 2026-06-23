@@ -1,0 +1,80 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Segoe UI", sans-serif;
+    background-color: #f0f2f5;
+    color: #ff0000;
+    line-height: 1.6;
+}
+
+/* ── HEADER ── */
+.site-header {
+    background: linear-gradient(135deg, #470000 0%, #a31717 60%, #ff000d 100%);
+    color: rgb(0, 0, 0);
+    padding: 1.2rem 2rem;
+    text-align: center;
+}
+
+.header-brand {
+    text-decoration: none;
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.header-icon {
+    font-size: 2rem;
+}
+
+.header-title {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: white;
+}
+
+.header-sub {
+    color: rgba(255,255,255,0.65);
+    font-size: 0.9rem;
+    margin-top: 0.2rem;
+}
+
+/* ── HERO ── */
+.hero-section {
+    background: white;
+    border-radius: 12px;
+    padding: 3rem 2rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+}
+
+/* ── MAIN ── */
+main.container {
+    min-height: calc(100vh - 200px);
+}
+
+/* ── CARDS ── */
+.card {
+    border-radius: 10px;
+    border: none;
+}
+
+/* ── FOOTER ── */
+.site-footer {
+    background-color: #1a1a2e;
+    color: rgba(255,255,255,0.7);
+    text-align: center;
+    padding: 1rem;
+    margin-top: 3rem;
+    font-size: 0.9rem;
+}
+
+/* ── TABLES ── */
+.table thead th {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}

@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>Aqui seus Consoles</h1>
+    <h3>Consoles</h3>
+    <hr>
+          <li><a href="/games">Pagina Games </a></li>
+          <li><a href="/">Voltar</a></li>
+          <h2>Consoles em Destaque</h2>
+          {% for chave, valor in consoles.items() %}
+          <p>{{ chave }} : {{ valor }}</p>
+
+<details> 
+     <summary> {{chave}} </summary>
+<p>{{valor}}</p>
+    </details>
+
+          {% endfor %}
+{% endblock content %}

@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h2><i class="bi bi-tv-fill"></i> Cadastrar Série</h2>
+<hr>
+
+{% if erro %}
+<div class="alert alert-danger"><i class="bi bi-exclamation-triangle-fill"></i> {{ erro }}</div>
+{% endif %}
+{% if sucesso %}
+<div class="alert alert-success"><i class="bi bi-check-circle-fill"></i> {{ sucesso }}</div>
+{% endif %}
+
+<div class="card shadow-sm mb-4" style="max-width: 600px;">
+    <div class="card-body">
+        <form action="{{ url_for('cadserie') }}" method="POST">
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Título</label>
+                <input type="text" name="titulo" class="form-control"
+                       placeholder="Ex: Breaking Bad" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Criador</label>
+                <input type="text" name="criador" class="form-control"
+                       placeholder="Ex: Vince Gilligan" required>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-semibold">Ano de Estreia</label>
+                    <input type="number" name="ano" class="form-control"
+                           placeholder="Ex: 2008" min="1950" max="2026" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-semibold">Nº de Temporadas</label>
+                    <input type="number" name="temporadas" class="form-control"
+                           placeholder="Ex: 5" min="1" required>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Gênero</label>
+                <select name="genero" class="form-select" required>
+                    <option value="" disabled selected>Selecione um gênero</option>
+                    <option>Ação</option>
+                    <option>Animação</option>
+                    <option>Comédia</option>
+                    <option>Drama</option>
+                    <option>Drama/Suspense</option>
+                    <option>Ficção Científica</option>
+                    <option>Horror</option>
+                    <option>Romance</option>
+                    <option>Documentário</option>
+                    <option>Reality Show</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Plataforma de Streaming</label>
+                <select name="plataforma" class="form-select" required>
+                    <option value="" disabled selected>Selecione a plataforma</option>
+                    <option>Netflix</option>
+                    <option>Prime Video</option>
+                    <option>Disney+</option>
+                    <option>HBO Max</option>
+                    <option>Apple TV+</option>
+                    <option>Paramount+</option>
+                    <option>Globoplay</option>
+                    <option>YouTube</option>
+                    <option>Outra</option>
+                </select>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-dark"><i class="bi bi-save-fill"></i> Cadastrar</button>
+                <button type="reset" class="btn btn-outline-secondary"><i class="bi bi-arrow-counterclockwise"></i> Limpar</button>
+                <a href="/series" class="btn btn-outline-dark"><i class="bi bi-list-ul"></i> Ver Lista</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<hr>
+<h4><i class="bi bi-list-check"></i> Séries Cadastradas</h4>
+
+{% if lista_series %}
+<div class="table-responsive mt-3">
+    <table class="table table-bordered table-hover table-sm align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>Título</th>
+                <th>Criador</th>
+                <th>Ano</th>
+                <th>Gênero</th>
+                <th>Temporadas</th>
+                <th>Plataforma</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for serie in lista_series %}
+            <tr>
+                <td><strong>{{ serie.titulo }}</strong></td>
+                <td>{{ serie.criador }}</td>
+                <td>{{ serie.ano }}</td>
+                <td>{{ serie.genero }}</td>
+                <td>{{ serie.temporadas }}</td>
+                <td><span class="badge bg-primary">{{ serie.plataforma }}</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-muted mt-2">Nenhuma série cadastrada ainda.</p>
+{% endif %}
+
+{% endblock content %}
