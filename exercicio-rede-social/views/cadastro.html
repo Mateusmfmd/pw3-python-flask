@@ -1,0 +1,108 @@
+<!-- Tela de cadastro de novo usuário -->
+{% extends 'base.html' %}
+{% block title %}Criar conta{% endblock %}
+{% block body_class %}pagina-auth{% endblock %}
+{% block main_class %}auth-wrapper{% endblock %}
+
+{% block content %}
+<div class="auth-card card-entrada">
+    <div class="text-center mb-4">
+        <span class="marca-icone marca-icone-lg mb-3"><i class="bi bi-camera-fill" aria-hidden="true"></i></span>
+        <h1 class="h3 fw-bold mb-1">Crie sua conta</h1>
+        <p class="text-body-secondary mb-0">Leva menos de um minuto.</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('cadastro') }}">
+        <div class="mb-3">
+            <label for="nome" class="form-label">Nome</label>
+            <div class="input-group campo-icone">
+                <span class="input-group-text"><i class="bi bi-person" aria-hidden="true"></i></span>
+                <input type="text" class="form-control" id="nome" name="nome" value="{{ nome or '' }}"
+                       placeholder="Como você quer ser chamado(a)" maxlength="80" autocomplete="name" required autofocus>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label for="email" class="form-label">E-mail</label>
+            <div class="input-group campo-icone">
+                <span class="input-group-text"><i class="bi bi-envelope" aria-hidden="true"></i></span>
+                <input type="email" class="form-control" id="email" name="email" value="{{ email or '' }}"
+                       placeholder="voce@exemplo.com" maxlength="120" autocomplete="email" required>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label for="senha" class="form-label">Senha</label>
+            <div class="input-group campo-icone">
+                <span class="input-group-text"><i class="bi bi-lock" aria-hidden="true"></i></span>
+                <input type="password" class="form-control" id="senha" name="senha" minlength="6"
+                       placeholder="Mínimo de 6 caracteres" autocomplete="new-password" required
+                       aria-describedby="forcaSenhaTexto">
+                <button type="button" class="btn btn-olho" data-mostrar-senha="senha"
+                        aria-label="Mostrar senha" aria-pressed="false">
+                    <i class="bi bi-eye" aria-hidden="true"></i>
+                </button>
+            </div>
+            <div class="forca-senha mt-2" aria-hidden="true"><span id="forcaSenhaBarra"></span></div>
+            <small id="forcaSenhaTexto" class="text-body-secondary"></small>
+        </div>
+
+        <div class="mb-4">
+            <label for="confirmar_senha" class="form-label">Confirmar senha</label>
+            <div class="input-group campo-icone">
+                <span class="input-group-text"><i class="bi bi-shield-lock" aria-hidden="true"></i></span>
+                <input type="password" class="form-control" id="confirmar_senha" name="confirmar_senha"
+                       minlength="6" placeholder="Repita a senha" autocomplete="new-password" required>
+                <button type="button" class="btn btn-olho" data-mostrar-senha="confirmar_senha"
+                        aria-label="Mostrar senha" aria-pressed="false">
+                    <i class="bi bi-eye" aria-hidden="true"></i>
+                </button>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-marca w-100 py-2">
+            <i class="bi bi-person-plus me-1" aria-hidden="true"></i> Cadastrar
+        </button>
+    </form>
+
+    <div class="divisor"><span>ou</span></div>
+
+    <p class="text-center mb-0">
+        Já tem conta?
+        <a href="{{ url_for('login') }}" class="link-marca fw-semibold">Entrar</a>
+    </p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Indicador simples de força da senha + validação de confirmação
+    (function () {
+        var senha = document.getElementById('senha');
+        var confirmar = document.getElementById('confirmar_senha');
+        var barra = document.getElementById('forcaSenhaBarra');
+        var texto = document.getElementById('forcaSenhaTexto');
+        var niveis = [
+            { t: '', c: 'transparent', w: 0 },
+            { t: 'Senha fraca', c: 'var(--rs-perigo)', w: 33 },
+            { t: 'Senha razoável', c: 'var(--rs-aviso)', w: 66 },
+            { t: 'Senha forte', c: 'var(--rs-sucesso)', w: 100 }
+        ];
+        senha.addEventListener('input', function () {
+            var v = senha.value, pontos = 0;
+            if (v.length >= 6) pontos++;
+            if (v.length >= 10 && /[A-Z]/.test(v) && /[a-z]/.test(v)) pontos++;
+            if (/\d/.test(v) && /[^A-Za-z0-9]/.test(v)) pontos++;
+            if (v.length === 0) pontos = 0; else if (pontos === 0) pontos = 1;
+            barra.style.width = niveis[pontos].w + '%';
+            barra.style.background = niveis[pontos].c;
+            texto.textContent = niveis[pontos].t;
+        });
+        function conferir() {
+            confirmar.setCustomValidity(confirmar.value && confirmar.value !== senha.value ? 'As senhas não conferem.' : '');
+        }
+        senha.addEventListener('input', conferir);
+        confirmar.addEventListener('input', conferir);
+    })();
+</script>
+{% endblock %}

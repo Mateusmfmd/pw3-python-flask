@@ -1,0 +1,247 @@
+<!-- Linha do tempo com as fotos e formulário de postagem -->
+{% extends 'base.html' %}
+{% block title %}Feed{% endblock %}
+
+{% block content %}
+<div class="coluna-feed">
+
+    <!-- ================= Formulário de nova publicação ================= -->
+    <section class="card card-app card-entrada mb-4" aria-labelledby="tituloNovoPost">
+        <div class="card-body p-3 p-sm-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                {{ avatar(usuario_atual, 'sm') }}
+                <h2 id="tituloNovoPost" class="h6 mb-0 fw-semibold">
+                    No que você está pensando, {{ usuario_atual.nome.split(' ')[0] }}?
+                </h2>
+            </div>
+
+            <!-- enctype multipart/form-data é obrigatório para enviar arquivos -->
+            <form method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data" id="formPost">
+                <div class="zona-upload" id="zonaUpload">
+                    <input type="file" name="file" id="file" accept=".png,.jpg,.jpeg,.gif,image/png,image/jpeg,image/gif"
+                           required aria-describedby="dicaUpload">
+                    <div class="zona-upload-vazia" id="uploadVazio">
+                        <i class="bi bi-images" aria-hidden="true"></i>
+                        <label for="file" class="fw-semibold mb-0">Clique ou arraste uma foto aqui</label>
+                        <small id="dicaUpload" class="text-body-secondary">PNG, JPG, JPEG ou GIF · até 16 MB</small>
+                    </div>
+                    <!-- Pré-visualização da imagem antes de enviar -->
+                    <img id="previewPost" class="preview-post" alt="Pré-visualização da imagem selecionada" hidden>
+                    <button type="button" class="btn btn-sm btn-dark rounded-pill botao-trocar" id="removerPreview" hidden>
+                        <i class="bi bi-x-lg" aria-hidden="true"></i> Remover
+                    </button>
+                </div>
+
+                <div class="mt-3">
+                    <label for="legenda" class="form-label visually-hidden">Legenda</label>
+                    <input type="text" class="form-control campo-legenda" name="legenda" id="legenda" maxlength="300"
+                           placeholder="Escreva uma legenda..." aria-describedby="contadorLegenda" autocomplete="off">
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <small id="contadorLegenda" class="text-body-secondary contador" aria-live="polite">0/300</small>
+                        <button type="submit" class="btn btn-marca px-4" id="botaoPublicar">
+                            <i class="bi bi-send-fill me-1" aria-hidden="true"></i> Publicar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- ================= Lista de posts (mais recentes primeiro) ================= -->
+    {% for post in posts %}
+    {% set curtido = post.id in curtidos %}
+    <article class="card card-app post-card card-entrada mb-4" id="post-{{ post.id }}"
+             style="--atraso: {{ [loop.index0, 6]|min * 70 }}ms" aria-label="Publicação de {{ post.autor.nome }}">
+        <header class="post-cabecalho">
+            {{ avatar(post.autor, 'sm') }}
+            <div class="flex-grow-1 lh-sm overflow-hidden">
+                <!-- Nome do autor via relacionamento (backref 'autor') -->
+                <strong class="d-block text-truncate">{{ post.autor.nome }}</strong>
+                <time class="small text-body-secondary" datetime="{{ post.data_post.isoformat() }}"
+                      title="{{ post.data_post.strftime('%d/%m/%Y às %H:%M') }}">
+                    {{ post.data_post|tempo_relativo }}
+                </time>
+            </div>
+
+            {% if post.usuario_id == usuario_atual.id %}
+            <!-- Desafio 1: só o autor vê a opção de excluir -->
+            <div class="dropdown">
+                <button class="btn btn-icone" type="button" data-bs-toggle="dropdown" aria-expanded="false"
+                        aria-label="Opções da publicação">
+                    <i class="bi bi-three-dots" aria-hidden="true"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow">
+                    <li>
+                        <button type="button" class="dropdown-item text-danger" data-bs-toggle="modal"
+                                data-bs-target="#modalExcluir"
+                                data-acao="{{ url_for('excluir_post', post_id=post.id) }}">
+                            <i class="bi bi-trash3 me-2" aria-hidden="true"></i>Excluir publicação
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            {% endif %}
+        </header>
+
+        <!-- Imagem em largura total; duplo clique curte -->
+        <div class="post-imagem" data-post="{{ post.id }}">
+            <img src="{{ url_for('static', filename='uploads/' ~ post.imagem) }}" loading="lazy"
+                 alt="{{ 'Foto de ' ~ post.autor.nome ~ (': ' ~ post.legenda if post.legenda else '') }}">
+            <i class="bi bi-heart-fill coracao-grande" aria-hidden="true"></i>
+        </div>
+
+        <div class="card-body pt-2 pb-3 px-3">
+            <div class="d-flex align-items-center gap-1">
+                <!-- Desafio 3: curtir/descurtir (funciona com e sem JavaScript) -->
+                <form method="POST" action="{{ url_for('curtir', post_id=post.id) }}" class="form-curtir" data-post="{{ post.id }}">
+                    <button type="submit" class="btn btn-icone btn-curtir {{ 'curtido' if curtido }}"
+                            aria-pressed="{{ 'true' if curtido else 'false' }}"
+                            aria-label="{{ 'Descurtir' if curtido else 'Curtir' }}">
+                        <i class="bi {{ 'bi-heart-fill' if curtido else 'bi-heart' }}" aria-hidden="true"></i>
+                    </button>
+                </form>
+                <a href="{{ url_for('chat') }}" class="btn btn-icone" aria-label="Comentar no chat" title="Conversar no chat">
+                    <i class="bi bi-chat" aria-hidden="true"></i>
+                </a>
+            </div>
+
+            <p class="fw-semibold mb-1 small" aria-live="polite">
+                <span class="contador-curtidas" data-post="{{ post.id }}">{{ post.total_curtidas }}</span>
+                <span class="rotulo-curtidas" data-post="{{ post.id }}">{{ 'curtida' if post.total_curtidas == 1 else 'curtidas' }}</span>
+            </p>
+
+            {% if post.legenda %}
+            <p class="legenda mb-1"><strong>{{ post.autor.nome }}</strong> {{ post.legenda }}</p>
+            {% endif %}
+
+            <time class="data-post" datetime="{{ post.data_post.isoformat() }}">
+                {{ post.data_post.strftime('%d/%m/%Y às %H:%M') }}
+            </time>
+        </div>
+    </article>
+    {% else %}
+    <!-- Estado vazio -->
+    <div class="estado-vazio card-entrada">
+        <div class="estado-vazio-icone"><i class="bi bi-camera" aria-hidden="true"></i></div>
+        <h2 class="h5 fw-semibold">Nenhuma publicação ainda</h2>
+        <p class="text-body-secondary mb-0">Seja o primeiro a compartilhar um momento! Escolha uma foto acima.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- ================= Modal de confirmação de exclusão ================= -->
+<div class="modal fade" id="modalExcluir" tabindex="-1" aria-labelledby="tituloModalExcluir" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <form method="POST" class="modal-content text-center rounded-4 border-0" id="formExcluir">
+            <div class="modal-body p-4">
+                <div class="icone-perigo mb-3"><i class="bi bi-trash3" aria-hidden="true"></i></div>
+                <h2 class="h5 fw-semibold" id="tituloModalExcluir">Excluir publicação?</h2>
+                <p class="text-body-secondary small mb-0">A foto será apagada para sempre, junto com as curtidas.</p>
+            </div>
+            <div class="modal-footer flex-nowrap p-0">
+                <button type="button" class="btn btn-lg btn-link text-decoration-none col-6 m-0 rounded-0 border-end text-body"
+                        data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-lg btn-link text-decoration-none col-6 m-0 rounded-0 text-danger fw-semibold">
+                    Excluir
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    // ---------- Pré-visualização da imagem + contador da legenda ----------
+    var input = document.getElementById('file');
+    var preview = document.getElementById('previewPost');
+    var vazio = document.getElementById('uploadVazio');
+    var remover = document.getElementById('removerPreview');
+    var zona = document.getElementById('zonaUpload');
+    var legenda = document.getElementById('legenda');
+    var contador = document.getElementById('contadorLegenda');
+    var permitidos = ['png', 'jpg', 'jpeg', 'gif'];
+
+    function limpar() {
+        input.value = '';
+        if (preview.src) URL.revokeObjectURL(preview.src);
+        preview.removeAttribute('src');
+        preview.hidden = true; remover.hidden = true; vazio.hidden = false;
+        zona.classList.remove('com-imagem');
+    }
+
+    input.addEventListener('change', function () {
+        var arquivo = input.files[0];
+        if (!arquivo) return limpar();
+        var ext = arquivo.name.split('.').pop().toLowerCase();
+        if (permitidos.indexOf(ext) === -1) {
+            alert('Formato inválido. Envie apenas PNG, JPG, JPEG ou GIF.');
+            return limpar();
+        }
+        preview.src = URL.createObjectURL(arquivo);
+        preview.hidden = false; remover.hidden = false; vazio.hidden = true;
+        zona.classList.add('com-imagem');
+    });
+    remover.addEventListener('click', limpar);
+
+    ['dragenter', 'dragover'].forEach(function (ev) {
+        zona.addEventListener(ev, function () { zona.classList.add('arrastando'); });
+    });
+    ['dragleave', 'drop'].forEach(function (ev) {
+        zona.addEventListener(ev, function () { zona.classList.remove('arrastando'); });
+    });
+
+    legenda.addEventListener('input', function () {
+        var n = legenda.value.length;
+        contador.textContent = n + '/300';
+        contador.classList.toggle('quase-cheio', n >= 260);
+    });
+    document.getElementById('formPost').addEventListener('submit', function () {
+        var b = document.getElementById('botaoPublicar');
+        setTimeout(function () {
+            b.disabled = true;
+            b.innerHTML = '<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> Publicando...';
+        }, 0);
+    });
+
+    // ---------- Modal de exclusão: define a URL do post escolhido ----------
+    var modal = document.getElementById('modalExcluir');
+    modal.addEventListener('show.bs.modal', function (e) {
+        document.getElementById('formExcluir').action = e.relatedTarget.dataset.acao;
+    });
+
+    // ---------- Curtir via fetch (sem recarregar a página) ----------
+    function curtir(form, apenasCurtir) {
+        var botao = form.querySelector('.btn-curtir');
+        if (apenasCurtir && botao.classList.contains('curtido')) return;   // duplo clique não descurte
+        fetch(form.action, { method: 'POST', headers: { 'X-Requested-With': 'fetch' } })
+            .then(function (r) { if (!r.ok) throw r; return r.json(); })
+            .then(function (dados) {
+                var id = form.dataset.post;
+                botao.classList.toggle('curtido', dados.curtido);
+                botao.setAttribute('aria-pressed', dados.curtido);
+                botao.setAttribute('aria-label', dados.curtido ? 'Descurtir' : 'Curtir');
+                botao.querySelector('i').className = 'bi ' + (dados.curtido ? 'bi-heart-fill' : 'bi-heart');
+                botao.classList.remove('pulsar'); void botao.offsetWidth; botao.classList.add('pulsar');
+                document.querySelector('.contador-curtidas[data-post="' + id + '"]').textContent = dados.total;
+                document.querySelector('.rotulo-curtidas[data-post="' + id + '"]').textContent = dados.total === 1 ? 'curtida' : 'curtidas';
+            })
+            .catch(function () { form.submit(); });   // plano B: envio normal
+    }
+
+    document.querySelectorAll('.form-curtir').forEach(function (form) {
+        form.addEventListener('submit', function (e) { e.preventDefault(); curtir(form, false); });
+    });
+
+    // Duplo clique (ou duplo toque) na imagem curte com animação do coração
+    document.querySelectorAll('.post-imagem').forEach(function (img) {
+        img.addEventListener('dblclick', function () {
+            var coracao = img.querySelector('.coracao-grande');
+            coracao.classList.remove('mostrar'); void coracao.offsetWidth; coracao.classList.add('mostrar');
+            curtir(document.querySelector('.form-curtir[data-post="' + img.dataset.post + '"]'), true);
+        });
+    });
+})();
+</script>
+{% endblock %}

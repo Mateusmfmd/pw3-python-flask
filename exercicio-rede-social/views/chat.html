@@ -1,0 +1,225 @@
+<!-- Bate-papo em tempo real com SocketIO -->
+{% extends 'base.html' %}
+{% block title %}Chat{% endblock %}
+{% block body_class %}pagina-chat{% endblock %}
+
+{% block content %}
+<div class="coluna-chat">
+    <section class="card card-app chat-card card-entrada" aria-labelledby="tituloChat">
+
+        <!-- Cabeçalho: título + contador de usuários online -->
+        <header class="chat-cabecalho">
+            <span class="chat-icone"><i class="bi bi-chat-heart-fill" aria-hidden="true"></i></span>
+            <div class="flex-grow-1 lh-sm">
+                <h1 id="tituloChat" class="h6 fw-semibold mb-0">Bate-papo da turma</h1>
+                <small class="text-body-secondary" id="statusConexao">Conectando...</small>
+            </div>
+            <button type="button" class="badge-online" id="badgeOnline" data-bs-toggle="tooltip"
+                    data-bs-placement="bottom" data-bs-title="Ninguém online" aria-label="Usuários online">
+                <span class="ponto-online" aria-hidden="true"></span>
+                <span id="totalOnline">0</span> online
+            </button>
+        </header>
+
+        <!-- Lista de mensagens -->
+        <div class="chat-mensagens" id="mensagens" role="log" aria-live="polite" aria-label="Mensagens do chat">
+            <div class="chat-vazio" id="chatVazio">
+                <i class="bi bi-chat-dots" aria-hidden="true"></i>
+                <p class="mb-0">Nenhuma mensagem ainda. Diga um oi! 👋</p>
+            </div>
+        </div>
+
+        <!-- Campo de envio: botão "Enviar" e tecla Enter -->
+        <form class="chat-rodape" id="formChat" autocomplete="off">
+            <label for="campoMsg" class="visually-hidden">Digite sua mensagem</label>
+            <input type="text" id="campoMsg" class="form-control campo-chat" placeholder="Digite uma mensagem..."
+                   maxlength="1000" disabled>
+            <button type="submit" class="btn btn-marca botao-enviar" id="botaoEnviar" disabled>
+                <i class="bi bi-send-fill" aria-hidden="true"></i><span class="d-none d-sm-inline ms-1">Enviar</span>
+            </button>
+        </form>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+(function () {
+    // ID do usuário logado (só serve para alinhar MEUS balões à direita).
+    // O NOME exibido é sempre definido pelo servidor a partir da session.
+    var MEU_ID = {{ session['user_id']|tojson }};
+
+    var lista = document.getElementById('mensagens');
+    var vazio = document.getElementById('chatVazio');
+    var form = document.getElementById('formChat');
+    var campo = document.getElementById('campoMsg');
+    var botao = document.getElementById('botaoEnviar');
+    var status = document.getElementById('statusConexao');
+    var badge = document.getElementById('badgeOnline');
+    var tooltip = bootstrap.Tooltip.getOrCreateInstance(badge);
+
+    var socket = io();
+
+    // ---------- Conexão ----------
+    socket.on('connect', function () {
+        status.textContent = 'Conectado';
+        campo.disabled = false; botao.disabled = false;
+        campo.focus();
+        socket.emit('join');                   // avisa "Fulano entrou no chat"
+    });
+    socket.on('disconnect', function () {
+        status.textContent = 'Desconectado. Tentando reconectar...';
+        campo.disabled = true; botao.disabled = true;
+    });
+    socket.on('connect_error', function () {
+        status.textContent = 'Não foi possível conectar (faça login novamente).';
+    });
+
+    // ---------- Envio: botão "Enviar" ou tecla Enter (submit do form) ----------
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var texto = campo.value.trim();
+        if (!texto) return;
+        socket.emit('msg', { msg: texto });    // o servidor completa com o nome da sessão
+        campo.value = '';
+        campo.focus();
+    });
+
+    // ---------- Recebimento ----------
+    socket.on('showmsg', function (data) {
+        var minha = data.user_id === MEU_ID;
+        adicionarMensagem(data, minha);
+        if (!minha) notificar(data.nome);
+    });
+
+    socket.on('status', function (data) {
+        var div = document.createElement('div');
+        div.className = 'msg-sistema';
+        var span = document.createElement('span');
+        span.textContent = data.msg + ' · ' + data.hora;    // textContent evita XSS
+        div.appendChild(span);
+        inserir(div);
+    });
+
+    socket.on('online', function (data) {
+        document.getElementById('totalOnline').textContent = data.total;
+        tooltip.setContent({ '.tooltip-inner': data.nomes.length ? data.nomes.join(', ') : 'Ninguém online' });
+        badge.setAttribute('aria-label', data.total + ' usuário(s) online: ' + data.nomes.join(', '));
+    });
+
+    // ---------- Montagem dos balões (só com createElement + textContent) ----------
+    function criarAvatar(nome, foto, userId) {
+        if (foto) {
+            var img = document.createElement('img');
+            img.src = foto;
+            img.alt = 'Foto de perfil de ' + nome;
+            img.className = 'avatar avatar-sm';
+            return img;
+        }
+        var span = document.createElement('span');
+        span.className = 'avatar avatar-sm avatar-inicial';
+        span.style.setProperty('--matiz', (userId * 47) % 360);   // mesma cor do servidor
+        span.setAttribute('role', 'img');
+        span.setAttribute('aria-label', 'Avatar de ' + nome);
+        span.textContent = (nome || '?').trim().charAt(0).toUpperCase();
+        return span;
+    }
+
+    function adicionarMensagem(data, minha) {
+        var linha = document.createElement('div');
+        linha.className = 'msg-linha ' + (minha ? 'minha' : 'outra');
+
+        var ultimo = lista.lastElementChild;
+        var agrupar = ultimo && ultimo.dataset && ultimo.dataset.autor === String(data.user_id);
+        linha.dataset.autor = String(data.user_id);
+        if (agrupar) linha.classList.add('agrupada');
+
+        if (!minha) linha.appendChild(criarAvatar(data.nome, data.foto, data.user_id));
+
+        var balao = document.createElement('div');
+        balao.className = 'balao';
+
+        var autor = document.createElement('span');
+        autor.className = 'balao-autor';
+        autor.textContent = minha ? 'Você' : data.nome;   // quem enviou
+
+        var texto = document.createElement('p');
+        texto.className = 'balao-texto';
+        texto.textContent = data.msg;                    // textContent: HTML vira texto puro (anti-XSS)
+
+        var hora = document.createElement('time');
+        hora.className = 'balao-hora';
+        hora.textContent = data.hora;
+
+        balao.append(autor, texto, hora);
+        linha.appendChild(balao);
+        inserir(linha);
+    }
+
+    function inserir(el) {
+        if (vazio) { vazio.remove(); vazio = null; }
+        // Só rola automaticamente se o usuário já estava perto do fim
+        var pertoDoFim = lista.scrollHeight - lista.scrollTop - lista.clientHeight < 120;
+        lista.appendChild(el);
+        if (pertoDoFim || el.classList.contains('minha')) {
+            lista.scrollTo({ top: lista.scrollHeight, behavior: 'smooth' });
+        }
+    }
+
+    // ================= Desafio 4: notificação com som + título piscando =================
+    var tituloOriginal = document.title;
+    var naoLidas = 0, intervaloTitulo = null, audioCtx = null;
+
+    // Navegadores só liberam áudio depois de uma interação do usuário
+    function prepararAudio() {
+        try {
+            audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        } catch (e) { audioCtx = null; }
+    }
+    ['click', 'keydown', 'touchstart'].forEach(function (ev) {
+        document.addEventListener(ev, prepararAudio, { once: true });
+    });
+
+    function tocarSom() {
+        if (!audioCtx) return;
+        var agora = audioCtx.currentTime;
+        [880, 1320].forEach(function (freq, i) {          // "plim" de duas notas
+            var osc = audioCtx.createOscillator();
+            var ganho = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            var inicio = agora + i * 0.12;
+            ganho.gain.setValueAtTime(0.0001, inicio);
+            ganho.gain.exponentialRampToValueAtTime(0.25, inicio + 0.02);
+            ganho.gain.exponentialRampToValueAtTime(0.0001, inicio + 0.25);
+            osc.connect(ganho).connect(audioCtx.destination);
+            osc.start(inicio);
+            osc.stop(inicio + 0.3);
+        });
+    }
+
+    function notificar(nome) {
+        if (!document.hidden && document.hasFocus()) return;   // só com a aba sem foco
+        naoLidas++;
+        tocarSom();
+        clearInterval(intervaloTitulo);
+        var alterna = false;
+        intervaloTitulo = setInterval(function () {
+            alterna = !alterna;
+            document.title = alterna ? '(' + naoLidas + ') 💬 Nova mensagem de ' + nome : tituloOriginal;
+        }, 1000);
+    }
+
+    function pararNotificacao() {
+        clearInterval(intervaloTitulo);
+        intervaloTitulo = null;
+        naoLidas = 0;
+        document.title = tituloOriginal;
+    }
+    window.addEventListener('focus', pararNotificacao);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) pararNotificacao(); });
+})();
+</script>
+{% endblock %}

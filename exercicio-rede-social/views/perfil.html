@@ -1,0 +1,103 @@
+<!-- Desafio 2: página de perfil com upload da foto -->
+{% extends 'base.html' %}
+{% block title %}Meu perfil{% endblock %}
+
+{% block content %}
+<div class="coluna-feed">
+    <section class="card card-app card-entrada mb-4 perfil-card" aria-labelledby="nomePerfil">
+        <div class="perfil-capa" aria-hidden="true"></div>
+        <div class="card-body text-center pt-0 px-4 pb-4">
+            <div class="perfil-avatar-wrap">
+                <span id="avatarAtual">{{ avatar(usuario_atual, 'xl') }}</span>
+                <img id="previewAvatar" class="avatar avatar-xl" alt="Pré-visualização da nova foto" hidden>
+            </div>
+            <h1 id="nomePerfil" class="h4 fw-bold mt-3 mb-0">{{ usuario_atual.nome }}</h1>
+            <p class="text-body-secondary small mb-3">{{ usuario_atual.email }}</p>
+
+            <div class="perfil-numeros mb-4">
+                <div><strong>{{ posts|length }}</strong><span>{{ 'publicação' if posts|length == 1 else 'publicações' }}</span></div>
+                <div><strong>{{ total_curtidas }}</strong><span>{{ 'curtida' if total_curtidas == 1 else 'curtidas' }}</span></div>
+            </div>
+
+            <!-- Upload da foto de perfil (mesma validação + uuid do post) -->
+            <form method="POST" action="{{ url_for('perfil') }}" enctype="multipart/form-data"
+                  class="d-flex flex-wrap justify-content-center gap-2" id="formFoto">
+                <label for="foto" class="btn btn-outline-marca">
+                    <i class="bi bi-camera me-1" aria-hidden="true"></i> Escolher foto
+                </label>
+                <input type="file" name="foto" id="foto" class="visually-hidden"
+                       accept=".png,.jpg,.jpeg,.gif,image/png,image/jpeg,image/gif" required>
+                <button type="submit" class="btn btn-marca" id="salvarFoto" hidden>
+                    <i class="bi bi-check-lg me-1" aria-hidden="true"></i> Salvar foto
+                </button>
+            </form>
+            {% if usuario_atual.foto %}
+            <form method="POST" action="{{ url_for('perfil') }}" class="mt-2">
+                <input type="hidden" name="acao" value="remover">
+                <button type="submit" class="btn btn-link btn-sm text-danger text-decoration-none">
+                    <i class="bi bi-trash3 me-1" aria-hidden="true"></i>Remover foto atual
+                </button>
+            </form>
+            {% endif %}
+            <small class="d-block text-body-secondary mt-2">PNG, JPG, JPEG ou GIF · até 16 MB</small>
+        </div>
+    </section>
+
+    <h2 class="h6 fw-semibold text-body-secondary text-uppercase small mb-3">
+        <i class="bi bi-grid-3x3 me-1" aria-hidden="true"></i> Minhas publicações
+    </h2>
+
+    {% if posts %}
+    <div class="grade-perfil card-entrada">
+        {% for post in posts %}
+        <div class="grade-item">
+            <img src="{{ url_for('static', filename='uploads/' ~ post.imagem) }}" loading="lazy"
+                 alt="{{ post.legenda or 'Minha publicação' }}">
+            <div class="grade-overlay">
+                <span><i class="bi bi-heart-fill" aria-hidden="true"></i> {{ post.total_curtidas }}</span>
+                <form method="POST" action="{{ url_for('excluir_post', post_id=post.id) }}"
+                      onsubmit="return confirm('Excluir esta publicação?');">
+                    <input type="hidden" name="voltar" value="{{ url_for('perfil') }}">
+                    <button type="submit" class="btn btn-sm btn-light rounded-circle" aria-label="Excluir publicação">
+                        <i class="bi bi-trash3" aria-hidden="true"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="estado-vazio card-entrada">
+        <div class="estado-vazio-icone"><i class="bi bi-images" aria-hidden="true"></i></div>
+        <h2 class="h5 fw-semibold">Nenhuma publicação ainda</h2>
+        <p class="text-body-secondary">Suas fotos aparecerão aqui.</p>
+        <a href="{{ url_for('feed') }}" class="btn btn-marca"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Publicar agora</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Pré-visualiza a nova foto de perfil antes de salvar
+    (function () {
+        var input = document.getElementById('foto');
+        var preview = document.getElementById('previewAvatar');
+        var atual = document.getElementById('avatarAtual');
+        var salvar = document.getElementById('salvarFoto');
+        input.addEventListener('change', function () {
+            var arq = input.files[0];
+            if (!arq) return;
+            var ext = arq.name.split('.').pop().toLowerCase();
+            if (['png', 'jpg', 'jpeg', 'gif'].indexOf(ext) === -1) {
+                alert('Formato inválido. Envie apenas PNG, JPG, JPEG ou GIF.');
+                input.value = '';
+                return;
+            }
+            preview.src = URL.createObjectURL(arq);
+            preview.hidden = false; atual.hidden = true; salvar.hidden = false;
+            salvar.focus();
+        });
+    })();
+</script>
+{% endblock %}

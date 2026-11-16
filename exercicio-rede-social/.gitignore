@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+models/*.sqlite3
+static/uploads/*
+!static/uploads/.gitkeep

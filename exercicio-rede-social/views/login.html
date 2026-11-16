@@ -1,0 +1,50 @@
+<!-- Tela de autenticação -->
+{% extends 'base.html' %}
+{% block title %}Entrar{% endblock %}
+{% block body_class %}pagina-auth{% endblock %}
+{% block main_class %}auth-wrapper{% endblock %}
+
+{% block content %}
+<div class="auth-card card-entrada">
+    <div class="text-center mb-4">
+        <span class="marca-icone marca-icone-lg mb-3"><i class="bi bi-camera-fill" aria-hidden="true"></i></span>
+        <h1 class="marca-texto display-6 mb-1">Clique</h1>
+        <p class="text-body-secondary mb-0">Compartilhe seus momentos com a turma.</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('login') }}">
+        <div class="mb-3">
+            <label for="email" class="form-label">E-mail</label>
+            <div class="input-group campo-icone">
+                <span class="input-group-text"><i class="bi bi-envelope" aria-hidden="true"></i></span>
+                <input type="email" class="form-control" id="email" name="email" value="{{ email or '' }}"
+                       placeholder="voce@exemplo.com" autocomplete="email" required autofocus>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label for="senha" class="form-label">Senha</label>
+            <div class="input-group campo-icone">
+                <span class="input-group-text"><i class="bi bi-lock" aria-hidden="true"></i></span>
+                <input type="password" class="form-control" id="senha" name="senha"
+                       placeholder="Sua senha" autocomplete="current-password" required>
+                <button type="button" class="btn btn-olho" data-mostrar-senha="senha"
+                        aria-label="Mostrar senha" aria-pressed="false">
+                    <i class="bi bi-eye" aria-hidden="true"></i>
+                </button>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-marca w-100 py-2">
+            <i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i> Entrar
+        </button>
+    </form>
+
+    <div class="divisor"><span>ou</span></div>
+
+    <p class="text-center mb-0">
+        Ainda não tem conta?
+        <a href="{{ url_for('cadastro') }}" class="link-marca fw-semibold">Cadastre-se</a>
+    </p>
+</div>
+{% endblock %}
